@@ -85,7 +85,7 @@
 
     <com.yannik.anki.PullButton
         android:id="@+id/easyButton"
-        android:layout_width="80dp"
+        android:layout_width="1dp"
         android:layout_height="wrap_content"
         android:layout_gravity="bottom|start"
         android:visibility="invisible"
@@ -111,7 +111,7 @@
 
     <com.yannik.anki.PullButton
         android:id="@+id/hardButton"
-        android:layout_width="80dp"
+        android:layout_width="1dp"
         android:layout_height="wrap_content"
         android:layout_gravity="top"
         android:visibility="invisible"
