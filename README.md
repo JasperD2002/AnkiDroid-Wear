@@ -1,5 +1,5 @@
 # AnkiWear
-brings Anki to your wrist! 
+brings Anki to your wrist! (just removed easy/hard and finicky swiping)
 <br/>
 <br/>
 
