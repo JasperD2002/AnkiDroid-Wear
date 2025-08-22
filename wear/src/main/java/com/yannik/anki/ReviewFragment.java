@@ -9,6 +9,7 @@ import android.content.Intent;
 import android.content.res.Resources;
 import android.graphics.Bitmap;
 import android.graphics.Color;
+import android.graphics.Typeface; // For JP font
 import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.ColorDrawable;
 import android.graphics.drawable.Drawable;
@@ -142,6 +143,9 @@ public class ReviewFragment extends Fragment implements WearMainActivity.JsonRec
     private boolean buttonsHiddenOnAmbient = false;
     private float gestureButtonVelocity = 1;
 
+    // Added field for the Typeface
+    private Typeface mJapaneseTypeface;
+
     public ReviewFragment() {
         // Required empty public constructor
     }
@@ -210,10 +214,10 @@ public class ReviewFragment extends Fragment implements WearMainActivity.JsonRec
                     easeButtons[MID].right();
                     easeButtons[HARD].left();
                     easeButtons[FAILED].right();
-                    easeButtons[EASY].slideIn(100);
-                    easeButtons[MID].slideIn(300);
-                    easeButtons[HARD].slideIn(500);
-                    easeButtons[FAILED].slideIn(700);
+                    easeButtons[EASY].slideIn(10);
+                    easeButtons[MID].slideIn(30);
+                    easeButtons[HARD].slideIn(50);
+                    easeButtons[FAILED].slideIn(70);
                     easeButtons[FAILED].setText(nextReviewTimes.getString(0));
                     easeButtons[HARD].setText(nextReviewTimes.getString(1));
                     easeButtons[MID].setText(nextReviewTimes.getString(2));
@@ -290,7 +294,43 @@ public class ReviewFragment extends Fragment implements WearMainActivity.JsonRec
         return jsonArray;
     }
 
+    // Added method to load the Japanese font
+    private void loadJapaneseFont() {
+        // Get the context. For android.app.Fragment, getContext() is available
+        // if API level is 23+ (or use getActivity() for broader compatibility if needed).
+        // The getContext() method from android.app.Fragment returns an android.content.Context.
+        android.content.Context context = getContext(); // Using fully qualified name for clarity
+
+        if (mJapaneseTypeface == null && context != null) { // Load only once and if context is available
+            try {
+                // Pass the non-null context to ResourcesCompat.getFont()
+                mJapaneseTypeface = androidx.core.content.res.ResourcesCompat.getFont(context, R.font.ms_gothic);
+            } catch (android.content.res.Resources.NotFoundException e) { // CORRECTED: Use android.content.res.Resources.NotFoundException
+                // Use android.util.Log as per your available imports
+                Log.e(getClass().getSimpleName(), "Japanese font not found. Ensure 'ms_gothic.ttf' (or .otf) is in 'wear/src/main/res/font/'", e);
+                // Font not found, mJapaneseTypeface will remain null, and default font will be used.
+            }
+        }
+    }
+
+
     private void updateFromHtmlText() {
+        loadJapaneseFont(); // Ensure the font is loaded or attempted to load
+
+        // Apply the custom font to TextViews if it was loaded successfully
+        if (mJapaneseTypeface != null) {
+            if (mTextView != null) {
+                mTextView.setTypeface(mJapaneseTypeface);
+            }
+            if (asTextView != null) { // For the autosizing TextView
+                asTextView.setTypeface(mJapaneseTypeface);
+            }
+            if (aTextView != null) { // For the alternative answer TextView
+                aTextView.setTypeface(mJapaneseTypeface);
+            }
+        }
+
+        // Original logic of updateFromHtmlText:
         if (showingAnswer) {
             if (altCardMode) {
                 setText(a, aTextView);
