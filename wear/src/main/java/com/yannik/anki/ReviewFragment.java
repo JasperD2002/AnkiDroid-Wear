@@ -304,7 +304,7 @@ public class ReviewFragment extends Fragment implements WearMainActivity.JsonRec
         if (mJapaneseTypeface == null && context != null) { // Load only once and if context is available
             try {
                 // Pass the non-null context to ResourcesCompat.getFont()
-                mJapaneseTypeface = androidx.core.content.res.ResourcesCompat.getFont(context, R.font.NotoSansJP_Regular);
+                mJapaneseTypeface = androidx.core.content.res.ResourcesCompat.getFont(context, R.font.notosansjp_regular);
             } catch (android.content.res.Resources.NotFoundException e) { // CORRECTED: Use android.content.res.Resources.NotFoundException
                 // Use android.util.Log as per your available imports
                 Log.e(getClass().getSimpleName(), "Japanese font not found. Ensure 'NotoSansJP_Regular.ttf' (or .otf) is in 'wear/src/main/res/font/'", e);
