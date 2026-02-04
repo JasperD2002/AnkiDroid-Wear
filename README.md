@@ -1,4 +1,12 @@
 # AnkiWear
+
+<h1>Ankidroid 2.20.1 (23 dec 2024, anki 24.11 / c47638ca, fsrs 1.4.3) </h1>
+<h3> CURRENTLY WORKING UPTO THIS VERSION, FURTHER VERSIONS UNSUPPORTED</h3>
+
+<h5> wear-debugX.apk requires sideloading onto wear</h5>
+to do so you can check out https://play.google.com/store/apps/details?id=org.freepoc.wearinstaller2 
+
+
 brings Anki to your wrist! (just removed easy/hard and finicky swiping)
 <br/>
 <br/>
