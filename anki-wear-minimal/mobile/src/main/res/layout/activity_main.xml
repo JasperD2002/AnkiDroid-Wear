@@ -1,0 +1,204 @@
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="16dp">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Anki Minimal — Debug"
+            android:textSize="22sp" />
+
+        <!-- Wear Connection -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Wear Connection"
+            android:textSize="16sp"
+            android:textStyle="bold"
+            android:layout_marginTop="20dp" />
+        <TextView
+            android:id="@+id/tv_wear_status"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Initializing..."
+            android:textSize="13sp"
+            android:textColor="#888888" />
+        <Button
+            android:id="@+id/btn_test_wear"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Send Test Message to Watch"
+            android:layout_marginTop="6dp" />
+        <TextView
+            android:id="@+id/tv_wear_result"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text=""
+            android:textSize="12sp"
+            android:textColor="#666666" />
+
+        <!-- AnkiDroid -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="AnkiDroid"
+            android:textSize="16sp"
+            android:textStyle="bold"
+            android:layout_marginTop="20dp" />
+        <TextView
+            android:id="@+id/tv_anki_status"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Checking..."
+            android:textSize="13sp"
+            android:textColor="#888888" />
+        <Button
+            android:id="@+id/btn_query_decks"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Query Decks"
+            android:layout_marginTop="6dp" />
+        <Button
+            android:id="@+id/btn_grant_perm"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Request AnkiDroid Permission"
+            android:layout_marginTop="4dp" />
+        <Button
+            android:id="@+id/btn_test_ankiconnect"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Test AnkiConnect (localhost:8765)"
+            android:layout_marginTop="4dp" />
+        <TextView
+            android:id="@+id/tv_anki_result"
+            android:layout_width="match_parent"
+            android:layout_height="200dp"
+            android:text=""
+            android:textSize="11sp"
+            android:typeface="monospace"
+            android:textColor="#666666"
+            android:textIsSelectable="true"
+            android:scrollbars="vertical" />
+
+        <Button
+            android:id="@+id/btn_settings"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Watch Settings (font size, etc.)"
+            android:layout_marginTop="6dp" />
+
+        <!-- Queue State (from WearMessageListenerService) -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Watch Cache State"
+            android:textSize="16sp"
+            android:textStyle="bold"
+            android:layout_marginTop="20dp" />
+        <Button
+            android:id="@+id/btn_queue_state"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Load Queue State"
+            android:layout_marginTop="6dp" />
+        <TextView
+            android:id="@+id/tv_queue_state"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text=""
+            android:textSize="11sp"
+            android:typeface="monospace"
+            android:textColor="#666666" />
+
+        <!-- Wear Listener Self-Test -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Listener Self-Test"
+            android:textSize="16sp"
+            android:textStyle="bold"
+            android:layout_marginTop="20dp" />
+        <Button
+            android:id="@+id/btn_self_test"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Send Loopback Test (phone→self)"
+            android:layout_marginTop="6dp" />
+        <TextView
+            android:id="@+id/tv_self_test_result"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text=""
+            android:textSize="12sp"
+            android:textColor="#666666" />
+
+        <!-- DB Debug -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="DB Access Debug"
+            android:textSize="16sp"
+            android:textStyle="bold"
+            android:layout_marginTop="20dp" />
+        <Button
+            android:id="@+id/btn_grant_storage"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Grant All Files Access"
+            android:layout_marginTop="6dp" />
+        <Button
+            android:id="@+id/btn_debug_db"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Test collection.anki2 Access"
+            android:layout_marginTop="4dp" />
+        <TextView
+            android:id="@+id/tv_db_result"
+            android:layout_width="match_parent"
+            android:layout_height="100dp"
+            android:text=""
+            android:textSize="11sp"
+            android:typeface="monospace"
+            android:textColor="#666666"
+            android:scrollbars="vertical" />
+
+        <!-- Log Output -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Log"
+            android:textSize="16sp"
+            android:textStyle="bold"
+            android:layout_marginTop="20dp" />
+        <Button
+            android:id="@+id/btn_clear_log"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Clear Log"
+            android:layout_marginTop="4dp" />
+        <Button
+            android:id="@+id/btn_service_logs"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Service Logs (from WearMsgListenerService)"
+            android:layout_marginTop="4dp" />
+        <TextView
+            android:id="@+id/tv_log"
+            android:layout_width="match_parent"
+            android:layout_height="300dp"
+            android:background="#1a1a1a"
+            android:textColor="#cccccc"
+            android:textSize="10sp"
+            android:typeface="monospace"
+            android:padding="6dp"
+            android:scrollbars="vertical"
+            android:textIsSelectable="true" />
+
+    </LinearLayout>
+</ScrollView>

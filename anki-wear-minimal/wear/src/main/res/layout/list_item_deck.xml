@@ -1,0 +1,29 @@
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="68dp"
+    android:orientation="vertical"
+    android:gravity="center_vertical"
+    android:paddingLeft="8dp"
+    android:paddingRight="8dp">
+    <TextView
+        android:id="@+id/tv_deck_name"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textSize="15sp"
+        android:maxLines="1"
+        android:ellipsize="end" />
+    <TextView
+        android:id="@+id/tv_deck_counts"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textSize="12sp"
+        android:textColor="#888888" />
+    <TextView
+        android:id="@+id/tv_deck_top"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textSize="11sp"
+        android:textColor="#666666"
+        android:maxLines="1"
+        android:ellipsize="end" />
+</LinearLayout>

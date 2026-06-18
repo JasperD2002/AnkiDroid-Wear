@@ -1,0 +1,77 @@
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="16dp">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Watch Settings"
+            android:textSize="22sp" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Settings are saved on your watch and apply immediately."
+            android:textSize="13sp"
+            android:textColor="#888888"
+            android:layout_marginTop="8dp" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Question Font Size"
+            android:textSize="14sp"
+            android:textStyle="bold"
+            android:layout_marginTop="24dp" />
+        <EditText
+            android:id="@+id/et_font_size_q"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:inputType="number"
+            android:text="15"
+            android:hint="14-30" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Answer Font Size"
+            android:textSize="14sp"
+            android:textStyle="bold"
+            android:layout_marginTop="16dp" />
+        <EditText
+            android:id="@+id/et_font_size_a"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:inputType="number"
+            android:text="15"
+            android:hint="14-30" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Pre-fetch Count"
+            android:textSize="14sp"
+            android:textStyle="bold"
+            android:layout_marginTop="16dp" />
+        <EditText
+            android:id="@+id/et_prefetch"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:inputType="number"
+            android:text="3"
+            android:hint="1-10" />
+
+        <Button
+            android:id="@+id/btn_save"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Save &amp; Send to Watch"
+            android:layout_marginTop="24dp" />
+
+    </LinearLayout>
+</ScrollView>

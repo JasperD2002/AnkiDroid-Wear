@@ -1,0 +1,29 @@
+apply plugin: 'com.android.application'
+
+android {
+    compileSdkVersion 32
+    defaultConfig {
+        applicationId "com.minimal.anki"
+        minSdkVersion 25
+        targetSdkVersion 32
+        versionCode 1
+        versionName "1.0"
+    }
+    buildTypes {
+        release {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+        }
+    }
+    lintOptions {
+        abortOnError false
+    }
+}
+
+dependencies {
+    implementation project(':sharedvalues')
+    wearApp project(':wear')
+    implementation 'com.google.android.gms:play-services-wearable:17.1.0'
+    implementation 'com.github.ankidroid:Anki-Android:api-v1.1.0'
+    implementation 'com.squareup.okhttp3:okhttp:4.9.3'
+}

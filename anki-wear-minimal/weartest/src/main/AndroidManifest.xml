@@ -1,0 +1,27 @@
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    package="com.minimal.anki.weartest">
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
+    <uses-permission android:name="android.permission.MANAGE_EXTERNAL_STORAGE" tools:ignore="ScopedStorage" />
+    <application
+        android:allowBackup="true"
+        android:label="Anki Test"
+        android:theme="@style/Theme.AppCompat.Light.DarkActionBar">
+        <activity
+            android:name=".MainActivity"
+            android:label="Anki Test"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+        <service
+            android:name=".ListenerService"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="com.google.android.gms.wearable.BIND_LISTENER" />
+            </intent-filter>
+        </service>
+    </application>
+</manifest>
