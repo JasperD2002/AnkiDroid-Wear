@@ -2,6 +2,7 @@ package com.minimal.anki.mobile;
 
 import android.content.ContentValues;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.net.Uri;
@@ -516,15 +517,23 @@ public class WearMessageListenerService extends WearableListenerService {
                         continue;
                     }
 
+                    boolean bury = ease == 1
+                            && getSharedPreferences("anki_minimal_settings", MODE_PRIVATE)
+                                    .getBoolean(CommonIdentifiers.CONFIG_BURY_ON_FAIL, false);
                     ContentValues values = new ContentValues();
                     values.put("note_id", noteId);
                     values.put("ord", cardOrd);
-                    values.put("answer_ease", ease);
-                    values.put("time_taken", 1000);
+                    if (bury) {
+                        values.put("buried", 1);
+                    } else {
+                        values.put("answer_ease", ease);
+                        values.put("time_taken", 1000);
+                    }
                     int rows = getContentResolver().update(SCHEDULE_URI, values, null, null);
                     String ts = DateFormat.getTimeInstance(DateFormat.MEDIUM).format(new Date());
                     synchronized (sFlushLog) {
-                        sFlushLog.add(0, ts + " flush: " + noteId + "/" + cardOrd + " rows=" + rows + " ease=" + ease);
+                        String verb = bury ? "bury" : "ease=" + ease;
+                        sFlushLog.add(0, ts + " flush: " + noteId + "/" + cardOrd + " rows=" + rows + " " + verb);
                         if (sFlushLog.size() > 20) sFlushLog.remove(sFlushLog.size() - 1);
                     }
                     if (rows > 0) {
