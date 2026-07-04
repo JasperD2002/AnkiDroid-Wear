@@ -4,6 +4,7 @@ import android.app.Activity;
 import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.widget.Button;
+import android.widget.CheckBox;
 import android.widget.EditText;
 import android.widget.Toast;
 
@@ -26,6 +27,7 @@ public class SettingsActivity extends Activity {
     private static final String KEY_PREFETCH = "prefetch_count";
 
     private EditText mFontQ, mFontA, mPrefetch;
+    private CheckBox mCbBuryOnFail;
     private GoogleApiClient mGoogleApiClient;
 
     @Override
@@ -36,11 +38,13 @@ public class SettingsActivity extends Activity {
         mFontQ = findViewById(R.id.et_font_size_q);
         mFontA = findViewById(R.id.et_font_size_a);
         mPrefetch = findViewById(R.id.et_prefetch);
+        mCbBuryOnFail = findViewById(R.id.cb_bury_on_fail);
 
         SharedPreferences prefs = getSharedPreferences(PREFS_NAME, MODE_PRIVATE);
         mFontQ.setText(String.valueOf(prefs.getInt(KEY_FONT_Q, 15)));
         mFontA.setText(String.valueOf(prefs.getInt(KEY_FONT_A, 15)));
         mPrefetch.setText(String.valueOf(prefs.getInt(KEY_PREFETCH, 3)));
+        mCbBuryOnFail.setChecked(prefs.getBoolean(CommonIdentifiers.CONFIG_BURY_ON_FAIL, false));
 
         mGoogleApiClient = new GoogleApiClient.Builder(this)
                 .addApi(Wearable.API)
@@ -66,6 +70,7 @@ public class SettingsActivity extends Activity {
                 .putInt(KEY_FONT_Q, fsQ)
                 .putInt(KEY_FONT_A, fsA)
                 .putInt(KEY_PREFETCH, pf)
+                .putBoolean(CommonIdentifiers.CONFIG_BURY_ON_FAIL, mCbBuryOnFail.isChecked())
                 .apply();
 
         sendToWatch(fsQ, fsA, pf);
