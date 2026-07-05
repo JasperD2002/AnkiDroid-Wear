@@ -7,7 +7,8 @@
 to do so you can check out https://play.google.com/store/apps/details?id=org.freepoc.wearinstaller2 
 
 
-brings Anki to your wrist! (just removed easy/hard and finicky swiping)
+brings Anki to your wrist!
+a variety of changes, additions and (debatably) improvements
 <br/>
 <br/>
 <br/>
