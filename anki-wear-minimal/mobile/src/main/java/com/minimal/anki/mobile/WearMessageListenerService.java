@@ -180,6 +180,8 @@ public class WearMessageListenerService extends WearableListenerService {
             handleCardAnswer(data);
         } else if (CommonIdentifiers.W2P_REQUEST_CARD.equals(path)) {
             handleCardRequest(data);
+        } else if (CommonIdentifiers.W2P_REQUEST_LAST_DECK.equals(path)) {
+            handleLastDeckRequest();
         }
     }
 
@@ -291,6 +293,7 @@ public class WearMessageListenerService extends WearableListenerService {
                 getContentResolver().update(SELECTED_DECK_URI, deckSel, null, null);
                 serviceLog("Updated selected deck in AnkiDroid to " + newDeckId);
                 mCurrentDeckId = newDeckId;
+                storeLastDeck(newDeckId);
                 mWatchCache.clear();
                 updateSnapshot();
                 int count = json.optInt(CommonIdentifiers.FIELD_COUNT, 3);
@@ -303,6 +306,46 @@ public class WearMessageListenerService extends WearableListenerService {
         });
     }
 
+    private void storeLastDeck(long deckId) {
+        try {
+            Uri deckUri = Uri.withAppendedPath(DECKS_URI, Long.toString(deckId));
+            Cursor deckCursor = getContentResolver().query(deckUri, new String[]{"deck_name"}, null, null, null);
+            String deckName = "";
+            if (deckCursor != null) {
+                if (deckCursor.moveToFirst()) {
+                    deckName = deckCursor.getString(deckCursor.getColumnIndexOrThrow("deck_name"));
+                }
+                deckCursor.close();
+            }
+            getSharedPreferences("anki_minimal_settings", MODE_PRIVATE)
+                    .edit()
+                    .putLong(CommonIdentifiers.CONFIG_LAST_DECK_ID, deckId)
+                    .putString(CommonIdentifiers.CONFIG_LAST_DECK_NAME, deckName)
+                    .apply();
+            serviceLog("Stored last deck " + deckId + " (" + deckName + ")");
+        } catch (Exception e) {
+            Log.e(TAG, "Error storing last deck: " + e.getMessage(), e);
+        }
+    }
+
+    private void handleLastDeckRequest() {
+        try {
+            SharedPreferences prefs = getSharedPreferences("anki_minimal_settings", MODE_PRIVATE);
+            long deckId = prefs.getLong(CommonIdentifiers.CONFIG_LAST_DECK_ID, -1);
+            String deckName = prefs.getString(CommonIdentifiers.CONFIG_LAST_DECK_NAME, "");
+            JSONObject resp = new JSONObject();
+            if (deckId > 0) {
+                resp.put(CommonIdentifiers.FIELD_DECK_ID, deckId);
+                resp.put(CommonIdentifiers.FIELD_DECK_NAME, deckName);
+            }
+            fireMessage(CommonIdentifiers.P2W_LAST_DECK, resp.toString());
+            serviceLog("Sent last deck: " + (deckId > 0 ? deckId + " (" + deckName + ")" : "(none)"));
+        } catch (Exception e) {
+            Log.e(TAG, "Error sending last deck: " + e.getMessage(), e);
+            serviceLog("Error sending last deck: " + e.getMessage());
+        }
+    }
+
     private void handleCardAnswer(String data) {
         if (!hasAnkiPerm()) return;
         mSingleThread.execute(() -> {
@@ -311,9 +354,6 @@ public class WearMessageListenerService extends WearableListenerService {
                 long noteId = json.getLong(CommonIdentifiers.FIELD_NOTE_ID);
                 int cardOrd = json.getInt(CommonIdentifiers.FIELD_CARD_ORD);
                 int ease = json.getInt(CommonIdentifiers.FIELD_EASE);
-
-                String key = cardKey(noteId, cardOrd);
-                mWatchCache.remove(key);
 
                 synchronized (mPendingAnswers) {
                     mPendingAnswers.add(json);
@@ -502,9 +542,9 @@ public class WearMessageListenerService extends WearableListenerService {
             }
             serviceLog("flushAnswers: " + mPendingAnswers.size() + " pending");
             List<JSONObject> remaining = new ArrayList<>();
-            List<JSONObject> deferred = new ArrayList<>();
             int successes = 0;
             int failures = 0;
+            int dropped = 0;
             for (JSONObject ans : mPendingAnswers) {
                 try {
                     long noteId = ans.getLong(CommonIdentifiers.FIELD_NOTE_ID);
@@ -512,8 +552,8 @@ public class WearMessageListenerService extends WearableListenerService {
                     int ease = ans.getInt(CommonIdentifiers.FIELD_EASE);
 
                     if (!isMatchingTopCard(noteId, cardOrd)) {
-                        deferred.add(ans);
-                        serviceLog("deferred " + noteId + "/" + cardOrd + " — not current top card");
+                        dropped++;
+                        serviceLog("dropped " + noteId + "/" + cardOrd + " — not current top card, re-syncing watch");
                         continue;
                     }
 
@@ -556,15 +596,15 @@ public class WearMessageListenerService extends WearableListenerService {
             }
             mPendingAnswers.clear();
             mPendingAnswers.addAll(remaining);
-            mPendingAnswers.addAll(deferred);
-            boolean hadMismatch = !deferred.isEmpty();
             if (!mPendingAnswers.isEmpty()) {
-                serviceLog("flush: " + successes + " ok, " + failures + " fail, " + deferred.size() + " deferred — " + mPendingAnswers.size() + " remain, retrying");
+                serviceLog("flush: " + successes + " ok, " + failures + " fail, " + dropped
+                        + " dropped — " + mPendingAnswers.size() + " remain, retrying");
                 startFlushRetryTimer();
             } else {
-                serviceLog("flush: ALL " + successes + " succeeded, queue empty");
+                serviceLog("flush: " + successes + " ok, " + failures + " fail, " + dropped
+                        + " dropped — queue empty");
             }
-            if (successes > 0 || hadMismatch) {
+            if (successes > 0 || dropped > 0) {
                 sendTopCardChanged();
             }
         }
