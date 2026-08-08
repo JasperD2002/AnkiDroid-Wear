@@ -33,6 +33,8 @@ public class MainActivity extends Activity implements
 
     private static final String TAG = "MainActivity";
     private static final int PRE_FETCH_COUNT_DEFAULT = 3;
+    private static final String KEY_LAST_DECK_ID = "last_deck_id";
+    private static final String KEY_LAST_DECK_NAME = "last_deck_name";
 
     private int getPrefetchCount() {
         return getSharedPreferences("anki_settings", MODE_PRIVATE)
@@ -93,13 +95,33 @@ public class MainActivity extends Activity implements
         LocalBroadcastManager.getInstance(this).registerReceiver(
                 mMessageReceiver, new IntentFilter(ListenerService.ACTION_MESSAGE));
 
-        showDeckSelect(false);
+        long lastDeckId = getSharedPreferences("anki_settings", MODE_PRIVATE)
+                .getLong(KEY_LAST_DECK_ID, -1);
+        if (lastDeckId > 0) {
+            mCurrentDeckId = lastDeckId;
+            mCurrentDeckName = getSharedPreferences("anki_settings", MODE_PRIVATE)
+                    .getString(KEY_LAST_DECK_NAME, "");
+        }
+
+        if (savedInstanceState == null) {
+            Log.d(TAG, "Fresh start — deck select (auto-select last deck)");
+            showDeckSelect(false, true);
+        } else {
+            mDeckFragment = (DeckSelectFragment) getFragmentManager().findFragmentByTag("decks");
+            mReviewFragment = (ReviewFragment) getFragmentManager().findFragmentByTag("review");
+            Log.d(TAG, "State restored after kill — resuming "
+                    + (mReviewFragment != null ? "review" : "deck select"));
+        }
     }
 
     @Override
     protected void onResume() {
         super.onResume();
-        requestDecks();
+        if (mCurrentDeckId > 0 && mReviewFragment != null && mReviewFragment.isVisible()) {
+            onRequestCards();
+        } else {
+            requestDecks();
+        }
     }
 
     @Override
@@ -120,6 +142,23 @@ public class MainActivity extends Activity implements
                 JSONArray decks = new JSONArray(data);
                 if (mDeckFragment != null && mDeckFragment.isVisible()) {
                     mDeckFragment.onDecksReceived(decks);
+                }
+            } else if (CommonIdentifiers.P2W_LAST_DECK.equals(path)) {
+                JSONObject lastDeck = new JSONObject(data);
+                long deckId = lastDeck.optLong(CommonIdentifiers.FIELD_DECK_ID, -1);
+                String deckName = lastDeck.optString(CommonIdentifiers.FIELD_DECK_NAME, "");
+                if (deckId > 0) {
+                    getSharedPreferences("anki_settings", MODE_PRIVATE)
+                            .edit()
+                            .putLong(KEY_LAST_DECK_ID, deckId)
+                            .putString(KEY_LAST_DECK_NAME, deckName)
+                            .commit();
+                    Log.d(TAG, "Received last deck from phone: " + deckId + " (" + deckName + ")");
+                } else {
+                    Log.d(TAG, "Phone has no last deck saved");
+                }
+                if (mDeckFragment != null && mDeckFragment.isVisible()) {
+                    mDeckFragment.onLastDeckReceived(deckId, deckName);
                 }
             } else if (CommonIdentifiers.P2W_RESPOND_CARD.equals(path)) {
                 JSONObject wrapper = new JSONObject(data);
@@ -155,6 +194,16 @@ public class MainActivity extends Activity implements
                 }
             } else if (CommonIdentifiers.P2W_ANSWER_ACK.equals(path)) {
                 Log.d(TAG, "Answer confirmed by phone: " + data);
+                try {
+                    JSONObject ackData = new JSONObject(data);
+                    long noteId = ackData.optLong(CommonIdentifiers.FIELD_NOTE_ID, -1);
+                    int cardOrd = ackData.optInt(CommonIdentifiers.FIELD_CARD_ORD, -1);
+                    if (noteId >= 0 && mReviewFragment != null && mReviewFragment.isVisible()) {
+                        mReviewFragment.onAnswerAck(noteId, cardOrd);
+                    }
+                } catch (Exception e) {
+                    Log.e(TAG, "Error parsing answer ack", e);
+                }
             } else if (CommonIdentifiers.P2W_TOP_CARD_CHANGED.equals(path)) {
                 handleTopCardChanged(new JSONObject(data));
             } else if (CommonIdentifiers.P2W_CHANGE_SETTINGS.equals(path)) {
@@ -188,12 +237,22 @@ public class MainActivity extends Activity implements
         mCurrentDeckId = deckId;
         mCurrentDeckName = deckName;
         mCardQueue.clear();
+        getSharedPreferences("anki_settings", MODE_PRIVATE)
+                .edit()
+                .putLong(KEY_LAST_DECK_ID, deckId)
+                .putString(KEY_LAST_DECK_NAME, deckName)
+                .commit();
         showReview(true);
     }
 
     @Override
     public void onRetryDecks() {
         requestDecks();
+    }
+
+    @Override
+    public void onRequestLastDeck() {
+        fireMessage(CommonIdentifiers.W2P_REQUEST_LAST_DECK, "");
     }
 
     // --- Card callbacks ---
@@ -232,21 +291,15 @@ public class MainActivity extends Activity implements
 
     @Override
     public void onReviewFinished() {
-        showDeckSelect(true);
+        Log.d(TAG, "Review finished — reopening last deck");
+        getFragmentManager().popBackStack();
+        showReview(true);
     }
 
     @Override
     public void onBackToDecks() {
-        restartApp();
-    }
-
-    private void restartApp() {
-        Intent intent = getPackageManager().getLaunchIntentForPackage(getPackageName());
-        if (intent != null) {
-            intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_NEW_TASK);
-            startActivity(intent);
-        }
-        finish();
+        mCardQueue.clear();
+        showDeckSelect(false, false);
     }
 
     public JSONObject dequeueCard() {
@@ -283,8 +336,10 @@ public class MainActivity extends Activity implements
                     mReviewFragment.setCard(queued);
                 }
             } else {
-                Log.d(TAG, "Top card " + noteId + "/" + cardOrd + " not in queue, requesting refresh");
-                mCardQueue.clear();
+                Log.d(TAG, "Top card " + noteId + "/" + cardOrd + " not in queue — forcing re-sync to top card");
+                if (mReviewFragment != null) {
+                    mReviewFragment.setCard(card);
+                }
                 onRequestCards();
             }
         } catch (Exception e) {
@@ -294,11 +349,15 @@ public class MainActivity extends Activity implements
 
     // --- Navigation ---
 
-    private void showDeckSelect(boolean addToBackStack) {
+    private void showDeckSelect(boolean addToBackStack, boolean autoSelectLastDeck) {
         if (mReviewFragment != null) {
             mReviewFragment = null;
         }
-        mDeckFragment = new DeckSelectFragment();
+        long lastDeckId = getSharedPreferences("anki_settings", MODE_PRIVATE)
+                .getLong(KEY_LAST_DECK_ID, -1);
+        String lastDeckName = getSharedPreferences("anki_settings", MODE_PRIVATE)
+                .getString(KEY_LAST_DECK_NAME, "");
+        mDeckFragment = DeckSelectFragment.newInstance(lastDeckId, lastDeckName, autoSelectLastDeck);
         FragmentTransaction ft = getFragmentManager().beginTransaction();
         ft.replace(R.id.fragment_container, mDeckFragment, "decks");
         if (addToBackStack) ft.addToBackStack(null);

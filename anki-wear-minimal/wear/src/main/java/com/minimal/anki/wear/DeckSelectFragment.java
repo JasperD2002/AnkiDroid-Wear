@@ -29,6 +29,10 @@ public class DeckSelectFragment extends Fragment implements AdapterView.OnItemCl
     private static final long AUTO_RETRY_INTERVAL = 1000;
     private static final long MAX_RETRY_DURATION = 8000;
 
+    private static final String ARG_LAST_DECK_ID = "last_deck_id";
+    private static final String ARG_LAST_DECK_NAME = "last_deck_name";
+    private static final String ARG_AUTO_SELECT = "auto_select";
+
     private List<Deck> mDecks = new ArrayList<>();
     private DeckAdapter mAdapter;
     private ListView mListView;
@@ -41,15 +45,39 @@ public class DeckSelectFragment extends Fragment implements AdapterView.OnItemCl
     private long mRetryStartTime;
     private boolean mAutoRetryActive = false;
 
+    private long mAutoSelectLastDeckId = -1;
+    private String mAutoSelectLastDeckName = "";
+    private boolean mAutoSelectEnabled = false;
+    private boolean mAutoSelectDone = false;
+    private boolean mNoLastDeckMessageShown = false;
+    private boolean mLastDeckRequestSent = false;
+
     public interface OnDeckSelectedListener {
         void onDeckSelected(long deckId, String deckName);
         void onRetryDecks();
+        void onRequestLastDeck();
+    }
+
+    public static DeckSelectFragment newInstance(long lastDeckId, String lastDeckName, boolean autoSelectLastDeck) {
+        DeckSelectFragment fragment = new DeckSelectFragment();
+        Bundle args = new Bundle();
+        args.putLong(ARG_LAST_DECK_ID, lastDeckId);
+        args.putString(ARG_LAST_DECK_NAME, lastDeckName == null ? "" : lastDeckName);
+        args.putBoolean(ARG_AUTO_SELECT, autoSelectLastDeck);
+        fragment.setArguments(args);
+        return fragment;
     }
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         mAdapter = new DeckAdapter(mDecks);
+        Bundle args = getArguments();
+        if (args != null) {
+            mAutoSelectLastDeckId = args.getLong(ARG_LAST_DECK_ID, -1);
+            mAutoSelectLastDeckName = args.getString(ARG_LAST_DECK_NAME, "");
+            mAutoSelectEnabled = args.getBoolean(ARG_AUTO_SELECT, false);
+        }
     }
 
     @Override
@@ -152,12 +180,64 @@ public class DeckSelectFragment extends Fragment implements AdapterView.OnItemCl
         mAutoRetryActive = false;
     }
 
+    private void startAutoSelectPolling() {
+        if (!mAutoSelectEnabled) return;
+        if (mAutoSelectDone) return;
+        if (mAutoSelectLastDeckId <= 0) {
+            requestLastDeckFromPhone();
+            return;
+        }
+        selectLastDeckNow();
+    }
+
+    private void selectLastDeckNow() {
+        if (mAutoSelectDone) return;
+        mAutoSelectDone = true;
+        if (mListener != null) {
+            mListener.onDeckSelected(mAutoSelectLastDeckId, mAutoSelectLastDeckName);
+        }
+    }
+
+    private void requestLastDeckFromPhone() {
+        if (mLastDeckRequestSent) return;
+        mLastDeckRequestSent = true;
+        if (mLoadingLayout != null && mLoadingText != null) {
+            mLoadingText.setText("Requesting last deck...");
+            if (mProgressBar != null) mProgressBar.setVisibility(View.VISIBLE);
+        }
+        if (mListener != null) {
+            mListener.onRequestLastDeck();
+        }
+    }
+
+    public void onLastDeckReceived(long deckId, String deckName) {
+        if (!mAutoSelectEnabled) return;
+        if (deckId > 0) {
+            mAutoSelectLastDeckId = deckId;
+            mAutoSelectLastDeckName = deckName == null ? "" : deckName;
+            selectLastDeckNow();
+        } else {
+            showNoLastDeckMessage();
+        }
+    }
+
+    private void showNoLastDeckMessage() {
+        if (mNoLastDeckMessageShown) return;
+        mNoLastDeckMessageShown = true;
+        cancelAutoRetry();
+        if (mLoadingLayout != null && mLoadingText != null) {
+            mLoadingText.setText("No last deck saved");
+            if (mProgressBar != null) mProgressBar.setVisibility(View.GONE);
+        }
+    }
+
     @Override
     public void onResume() {
         super.onResume();
         if (mLoadingLayout != null && mLoadingLayout.getVisibility() == View.VISIBLE) {
             startAutoRetry();
         }
+        startAutoSelectPolling();
     }
 
     @Override

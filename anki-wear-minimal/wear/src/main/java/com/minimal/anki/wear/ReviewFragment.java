@@ -44,12 +44,18 @@ public class ReviewFragment extends Fragment {
     private Button mBackButton;
     private Button mAgainButton;
     private Button mGoodButton;
+    private TextView mWaitingText;
 
     private long mNoteId;
     private int mCardOrd;
     private String mQuestion;
     private String mAnswer;
     private boolean mAnswerShown = false;
+    private boolean mAnswerPendingAck = false;
+    private boolean mShownCard = false;
+    private long mPendingAckNoteId = -1;
+    private int mPendingAckCardOrd = -1;
+    private final android.os.Handler mPendingAckTimeout = new android.os.Handler();
 
     private Callbacks mCallbacks;
 
@@ -81,6 +87,7 @@ public class ReviewFragment extends Fragment {
         mBackButton = view.findViewById(R.id.btn_back_decks);
         mAgainButton = view.findViewById(R.id.btn_again);
         mGoodButton = view.findViewById(R.id.btn_good);
+        mWaitingText = view.findViewById(R.id.tv_waiting);
 
         mShowAnswerBtn.setOnClickListener(v -> showAnswer());
         view.findViewById(R.id.btn_back_decks).setOnClickListener(v -> {
@@ -131,6 +138,7 @@ public class ReviewFragment extends Fragment {
         } catch (Exception e) {
             Log.e(TAG, "Error parsing card JSON", e);
         }
+        mShownCard = true;
         if (mLoadingCardLayout != null) {
             mLoadingCardLayout.setVisibility(View.GONE);
         }
@@ -250,11 +258,48 @@ public class ReviewFragment extends Fragment {
         });
     }
 
+    public void onAnswerAck(long noteId, int cardOrd) {
+        if (mAnswerPendingAck && noteId == mPendingAckNoteId && cardOrd == mPendingAckCardOrd) {
+            unlockAnswerButtons();
+        }
+    }
+
+    private void lockAnswerButtons() {
+        mAnswerPendingAck = true;
+        mPendingAckNoteId = mNoteId;
+        mPendingAckCardOrd = mCardOrd;
+        mAgainButton.setEnabled(false);
+        mGoodButton.setEnabled(false);
+        if (mWaitingText != null) {
+            mWaitingText.setVisibility(View.VISIBLE);
+        }
+        mPendingAckTimeout.removeCallbacksAndMessages(null);
+        mPendingAckTimeout.postDelayed(() -> {
+            if (mAnswerPendingAck) {
+                Log.w(TAG, "Answer ack timeout — auto-unlocking buttons");
+                unlockAnswerButtons();
+            }
+        }, 3000);
+    }
+
+    private void unlockAnswerButtons() {
+        mAnswerPendingAck = false;
+        mPendingAckNoteId = -1;
+        mPendingAckCardOrd = -1;
+        mAgainButton.setEnabled(true);
+        mGoodButton.setEnabled(true);
+        if (mWaitingText != null) {
+            mWaitingText.setVisibility(View.GONE);
+        }
+        mPendingAckTimeout.removeCallbacksAndMessages(null);
+    }
+
     private void answer(int ease) {
         try {
             if (mCallbacks != null) {
                 mCallbacks.onAnswerCard(mNoteId, mCardOrd, ease);
             }
+            lockAnswerButtons();
             if (mCallbacks != null && mCallbacks.getQueueSize() > 0) {
                 JSONObject nextCard = ((MainActivity) getActivity()).dequeueCard();
                 if (nextCard != null) {
@@ -317,7 +362,7 @@ public class ReviewFragment extends Fragment {
         mAnswerText.setVisibility(View.GONE);
         mShowAnswerBtn.setVisibility(View.GONE);
         mEaseLayout.setVisibility(View.GONE);
-        if (mCallbacks != null) {
+        if (mCallbacks != null && mShownCard) {
             mCallbacks.onReviewFinished();
         }
     }
